@@ -49,11 +49,11 @@ app.get("/count", async (req, res) => {
 app.post("/", async (req, res) => {
   try {
     const checkIfNickExist = await Pokemon.findAll({
-      where: { nickname: req.body.nickname, pokemonId: req.body.pokemonId },
+      where: { nickname: req.body.nickname, pokemonId: `${req.body.pokemonId}` },
       raw: true,
     });
     if(checkIfNickExist.length>0){
-      res.status(401).json({ message: `Nickname Exist`});
+      res.status(201).json({ message: `Nickname Exist`});
     }else{
       const pokemonPost = await Pokemon.create({
         nickname: req.body.nickname,
