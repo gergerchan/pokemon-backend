@@ -3,9 +3,9 @@ const express = require("express");
 const app = express();
 const morgan = require("morgan");
 const { Pokemon } = require("./models");
-const cors = require('cors')
+const cors = require("cors");
 
-app.use(cors())
+app.use(cors());
 app.use(morgan("tiny"));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -30,9 +30,11 @@ app.get("/", (req, res) => {
 
 app.get("/count", async (req, res) => {
   try {
-    const allDataPokemon = await Pokemon.findAll({raw: true});
-    const mp = new Map(allDataPokemon.map(o => [o.pokemonId, {...o, count: 0 }]));
-    for (const {pokemonId} of allDataPokemon) mp.get(pokemonId).count++;
+    const allDataPokemon = await Pokemon.findAll({ raw: true });
+    const mp = new Map(
+      allDataPokemon.map((o) => [o.pokemonId, { ...o, count: 0 }])
+    );
+    for (const { pokemonId } of allDataPokemon) mp.get(pokemonId).count++;
     const result = Array.from(mp.values());
     res.status(201).json({ message: "success", data: result });
   } catch (error) {
@@ -44,17 +46,25 @@ app.get("/count", async (req, res) => {
   }
 });
 
-app.post("/", (req, res) => {
-  Pokemon.create({
-    nickname: req.body.nickname,
-    pokemonId: req.body.pokemonId,
-  })
-    .then((pokemon) => {
-      res.status(201).json({ message: "success", data: pokemon });
-    })
-    .catch((err) => {
-      res.status(422).json("cant create pokemon");
+app.post("/", async (req, res) => {
+  try {
+    const checkIfNickExist = await Pokemon.findAll({
+      where: { nickname: req.body.nickname, pokemonId: req.body.pokemonId },
+      raw: true,
     });
+    if(checkIfNickExist.length>0){
+      res.status(401).json({ message: `Nickname Exist`});
+    }else{
+      const pokemonPost = await Pokemon.create({
+        nickname: req.body.nickname,
+        pokemonId: req.body.pokemonId,
+      });
+      res.status(201).json({ message: `Success`, data: pokemonPost });
+    }
+    
+  } catch (error) {
+    res.status(422).json({ status: "cant create pokemon", message: error });
+  }
 });
 
 app.put("/:id", (req, res) => {
@@ -76,7 +86,7 @@ app.put("/:id", (req, res) => {
 app.delete("/:id", (req, res) => {
   Pokemon.destroy({ where: { id: req.params.id } })
     .then((pokemon) => {
-      res.status(201).json(pokemon);
+      res.status(201).json({ message: "success", data: pokemon });
     })
     .catch((err) => {
       res.status(422).json("cant delete pokemon");
